@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { CartProvider } from "@/components/ui/shopping-cart";
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import Categories from "@/components/Categories";
-import Products from "@/components/Products";
-import About from "@/components/About";
-import Contact from "@/components/Contact";
-import Footer from "@/components/Footer";
-import ShoppingCartSidebar from "@/components/ShoppingCartSidebar";
+import Header from "@/components/layout/Header";
+import Hero from "@/components/sections/Hero";
+import Categories from "@/components/sections/Categories";
+import Products from "@/components/sections/Products";
+import About from "@/components/sections/About";
+import Contact from "@/components/sections/Contact";
+import Footer from "@/components/layout/Footer";
+import ShoppingCartSidebar from "@/components/cart/ShoppingCartSidebar";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("home");
