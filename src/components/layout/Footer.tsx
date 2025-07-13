@@ -93,7 +93,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Company Info */}
           <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-6">Heritage Threads</h2>
+            <h2 className="text-2xl font-bold mb-6">Mannat Enterprises</h2>
             <p className="text-white/80 mb-6 leading-relaxed">
               For over 50 years, we've been crafting exceptional menswear that blends traditional 
               craftsmanship with contemporary style. Experience the perfect fusion of heritage and modernity.
@@ -103,15 +103,15 @@ const Footer: React.FC = () => {
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 text-brand-warm" />
-                <span className="text-sm">123 Heritage Street, Fashion District, Mumbai 400001</span>
+                <span className="text-sm">A-303, Chandresh Rachna , Mira Road (East) , Thane 401107</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-brand-warm" />
-                <span className="text-sm">+91 98765 43210</span>
+                <span className="text-sm">+91 9369007785</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-brand-warm" />
-                <span className="text-sm">info@heritagethreads.com</span>
+                <span className="text-sm">info@mannatenterprises.com</span>
               </div>
             </div>
 
@@ -210,7 +210,7 @@ const Footer: React.FC = () => {
         <div className="container mx-auto px-4 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-white/70">
-              © 2024 Heritage Threads. All rights reserved.
+              © 2024 Mannat Enterprises. All rights reserved.
             </p>
             <div className="flex gap-4 text-sm text-white/70">
               <span>Made with ❤️ in India</span>

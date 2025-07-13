@@ -49,17 +49,17 @@ const Contact: React.FC = () => {
     {
       icon: MapPin,
       title: "Visit Our Store",
-      details: ["123 Heritage Street", "Fashion District, Mumbai", "Maharashtra 400001"],
+      details: ["A-303, Chandresh Rachna", "Mira Road (East)", "Thane 401107"],
     },
     {
       icon: Phone,
       title: "Call Us",
-      details: ["+91 98765 43210", "+91 98765 43211", "Mon-Sat: 10 AM - 8 PM"],
+      details: ["+91 9369007785", "Mon-Sat: 10 AM - 8 PM"],
     },
     {
       icon: Mail,
       title: "Email Us",
-      details: ["info@heritagethreads.com", "orders@heritagethreads.com", "support@heritagethreads.com"],
+      details: ["info@mannatenterprises.com", "orders@mannatenterprises.com", "support@mannatenterprises.com"],
     },
     {
       icon: Clock,
@@ -186,7 +186,7 @@ const Contact: React.FC = () => {
                         type="tel"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="+91 98765 43210"
+                        placeholder="+91 9369007785"
                         className="border-brand-primary/20 focus:border-brand-primary"
                       />
                     </div>

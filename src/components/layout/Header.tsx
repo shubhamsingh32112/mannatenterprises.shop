@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection, setActiveSection }) => {
           {/* Logo */}
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-brand-primary">
-              Heritage Threads
+              Mannat Enterprises
             </h1>
           </div>
 
