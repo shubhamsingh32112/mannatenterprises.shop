@@ -66,6 +66,15 @@ const WalletCheckout = () => {
     return params.get("session");
   }, []);
 
+  const apiBaseUrl = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get("apiBase");
+    if (fromQuery && fromQuery.trim().length > 0) {
+      return fromQuery.trim().replace(/\/$/, "");
+    }
+    return API_BASE_URL.replace(/\/$/, "");
+  }, []);
+
   const openApp = () => {
     if (!appOpenUrl) return;
     window.location.href = appOpenUrl;
@@ -90,7 +99,7 @@ const WalletCheckout = () => {
       try {
         await loadRazorpayScript();
 
-        const orderResp = await fetch(`${API_BASE_URL}/payment/web/create-order`, {
+        const orderResp = await fetch(`${apiBaseUrl}/payment/web/create-order`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -134,7 +143,7 @@ const WalletCheckout = () => {
               setStatus("processing");
               setMessage("Verifying payment...");
 
-              const verifyResp = await fetch(`${API_BASE_URL}/payment/web/verify`, {
+              const verifyResp = await fetch(`${apiBaseUrl}/payment/web/verify`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -184,13 +193,17 @@ const WalletCheckout = () => {
         razorpay.open();
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Checkout failed";
+        const userFacing =
+          errorMessage === "Failed to fetch"
+            ? "Could not reach payment server. Please retry in a moment."
+            : errorMessage;
         setStatus("failed");
-        setMessage(errorMessage);
+        setMessage(userFacing);
       }
     };
 
     void startCheckout();
-  }, [checkoutToken]);
+  }, [checkoutToken, apiBaseUrl]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
