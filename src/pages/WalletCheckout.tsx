@@ -60,6 +60,7 @@ const WalletCheckout = () => {
   const [message, setMessage] = useState("Preparing checkout...");
   const [coins, setCoins] = useState<number | null>(null);
   const [appOpenUrl, setAppOpenUrl] = useState<string | null>(null);
+  const [retriedWithoutConfig, setRetriedWithoutConfig] = useState(false);
 
   const checkoutToken = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -116,28 +117,34 @@ const WalletCheckout = () => {
         setStatus("ready");
         setMessage(`Pay INR ${orderData.data.amount / 100} for ${orderData.data.coins} coins`);
 
-        const options: Record<string, unknown> = {
+        const buildOptions = (mode: "prefer_upi" | "default_methods"): Record<string, unknown> => ({
           key: orderData.data.keyId,
           amount: orderData.data.amount,
           currency: orderData.data.currency,
           name: "Match Vibe",
           description: `${orderData.data.coins} Coins`,
           order_id: orderData.data.orderId,
-          // Docs-aligned configuration: render a UPI-only checkout block.
-          config: {
-            display: {
-              blocks: {
-                upi_only: {
-                  name: "Pay via UPI",
-                  instruments: [{ method: "upi" }],
+          ...(mode === "prefer_upi"
+            ? {
+                // Prefer UPI, but keep default blocks enabled as a fallback.
+                // On some devices/browsers, restricting methods can trigger
+                // "No appropriate payment method found".
+                config: {
+                  display: {
+                    blocks: {
+                      upi_only: {
+                        name: "Pay via UPI",
+                        instruments: [{ method: "upi" }],
+                      },
+                    },
+                    sequence: ["block.upi_only"],
+                    preferences: {
+                      show_default_blocks: true,
+                    },
+                  },
                 },
-              },
-              sequence: ["block.upi_only"],
-              preferences: {
-                show_default_blocks: false,
-              },
-            },
-          },
+              }
+            : {}),
           handler: async (response: RazorpaySuccessResponse) => {
             try {
               setStatus("processing");
@@ -182,15 +189,33 @@ const WalletCheckout = () => {
               setAppOpenUrl(buildFallbackAppUrl("failed", "cancelled"));
             },
           },
+        });
+
+        const openCheckout = (mode: "prefer_upi" | "default_methods") => {
+          const razorpay = new window.Razorpay(buildOptions(mode));
+          razorpay.on("payment.failed", (failure: unknown) => {
+            const failureJson =
+              typeof failure === "object" && failure !== null
+                ? JSON.stringify(failure)
+                : String(failure ?? "");
+            const isNoMethod = /no appropriate payment method found/i.test(failureJson);
+
+            if (isNoMethod && !retriedWithoutConfig) {
+              setRetriedWithoutConfig(true);
+              setStatus("ready");
+              setMessage("Retrying with alternate payment methods...");
+              openCheckout("default_methods");
+              return;
+            }
+
+            setStatus("failed");
+            setMessage("Payment failed. Please retry from the app.");
+            setAppOpenUrl(buildFallbackAppUrl("failed", "payment_failed"));
+          });
+          razorpay.open();
         };
 
-        const razorpay = new window.Razorpay(options);
-        razorpay.on("payment.failed", () => {
-          setStatus("failed");
-          setMessage("Payment failed. Please retry from the app.");
-          setAppOpenUrl(buildFallbackAppUrl("failed", "payment_failed"));
-        });
-        razorpay.open();
+        openCheckout("prefer_upi");
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Checkout failed";
         const userFacing =
@@ -203,7 +228,7 @@ const WalletCheckout = () => {
     };
 
     void startCheckout();
-  }, [checkoutToken, apiBaseUrl]);
+  }, [checkoutToken, apiBaseUrl, retriedWithoutConfig]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
