@@ -60,7 +60,6 @@ const WalletCheckout = () => {
   const [message, setMessage] = useState("Preparing checkout...");
   const [coins, setCoins] = useState<number | null>(null);
   const [appOpenUrl, setAppOpenUrl] = useState<string | null>(null);
-  const [retriedWithoutConfig, setRetriedWithoutConfig] = useState(false);
 
   const checkoutToken = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -90,6 +89,8 @@ const WalletCheckout = () => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const startCheckout = async () => {
       if (!checkoutToken) {
         setStatus("failed");
@@ -99,6 +100,7 @@ const WalletCheckout = () => {
 
       try {
         await loadRazorpayScript();
+        if (cancelled) return;
 
         const orderResp = await fetch(`${apiBaseUrl}/payment/web/create-order`, {
           method: "POST",
@@ -112,39 +114,23 @@ const WalletCheckout = () => {
         if (!orderResp.ok || !orderData.success || !orderData.data) {
           throw new Error(orderData.error || "Failed to create order");
         }
+        if (cancelled) return;
 
-        setCoins(orderData.data.coins);
+        const data = orderData.data;
+        setCoins(data.coins);
         setStatus("ready");
-        setMessage(`Pay INR ${orderData.data.amount / 100} for ${orderData.data.coins} coins`);
+        setMessage(`Pay INR ${data.amount / 100} for ${data.coins} coins`);
 
-        const buildOptions = (mode: "prefer_upi" | "default_methods"): Record<string, unknown> => ({
-          key: orderData.data.keyId,
-          amount: orderData.data.amount,
-          currency: orderData.data.currency,
+        /** Razorpay Standard Checkout default instruments only (no custom display.blocks).
+         *  Custom UPI-first blocks split UI across users and triggered "no appropriate
+         *  payment method" on some devices; one layout for everyone matches older behavior. */
+        const options: Record<string, unknown> = {
+          key: data.keyId,
+          amount: data.amount,
+          currency: data.currency,
           name: "Match Vibe",
-          description: `${orderData.data.coins} Coins`,
-          order_id: orderData.data.orderId,
-          ...(mode === "prefer_upi"
-            ? {
-                // Prefer UPI, but keep default blocks enabled as a fallback.
-                // On some devices/browsers, restricting methods can trigger
-                // "No appropriate payment method found".
-                config: {
-                  display: {
-                    blocks: {
-                      upi_only: {
-                        name: "Pay via UPI",
-                        instruments: [{ method: "upi" }],
-                      },
-                    },
-                    sequence: ["block.upi_only"],
-                    preferences: {
-                      show_default_blocks: true,
-                    },
-                  },
-                },
-              }
-            : {}),
+          description: `${data.coins} Coins`,
+          order_id: data.orderId,
           handler: async (response: RazorpaySuccessResponse) => {
             try {
               setStatus("processing");
@@ -189,34 +175,17 @@ const WalletCheckout = () => {
               setAppOpenUrl(buildFallbackAppUrl("failed", "cancelled"));
             },
           },
-        });
-
-        const openCheckout = (mode: "prefer_upi" | "default_methods") => {
-          const razorpay = new window.Razorpay(buildOptions(mode));
-          razorpay.on("payment.failed", (failure: unknown) => {
-            const failureJson =
-              typeof failure === "object" && failure !== null
-                ? JSON.stringify(failure)
-                : String(failure ?? "");
-            const isNoMethod = /no appropriate payment method found/i.test(failureJson);
-
-            if (isNoMethod && !retriedWithoutConfig) {
-              setRetriedWithoutConfig(true);
-              setStatus("ready");
-              setMessage("Retrying with alternate payment methods...");
-              openCheckout("default_methods");
-              return;
-            }
-
-            setStatus("failed");
-            setMessage("Payment failed. Please retry from the app.");
-            setAppOpenUrl(buildFallbackAppUrl("failed", "payment_failed"));
-          });
-          razorpay.open();
         };
 
-        openCheckout("prefer_upi");
+        const razorpay = new window.Razorpay(options);
+        razorpay.on("payment.failed", () => {
+          setStatus("failed");
+          setMessage("Payment failed. Please retry from the app.");
+          setAppOpenUrl(buildFallbackAppUrl("failed", "payment_failed"));
+        });
+        razorpay.open();
       } catch (error) {
+        if (cancelled) return;
         const errorMessage = error instanceof Error ? error.message : "Checkout failed";
         const userFacing =
           errorMessage === "Failed to fetch"
@@ -228,7 +197,10 @@ const WalletCheckout = () => {
     };
 
     void startCheckout();
-  }, [checkoutToken, apiBaseUrl, retriedWithoutConfig]);
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutToken, apiBaseUrl]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
