@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import WalletCheckout from "./pages/WalletCheckout";
 import VipCheckout from "./pages/VipCheckout";
+import MomentsPremiumCheckout from "./pages/MomentsPremiumCheckout";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/wallet-checkout" element={<WalletCheckout />} />
           <Route path="/vip-checkout" element={<VipCheckout />} />
+          <Route path="/moments-premium-checkout" element={<MomentsPremiumCheckout />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
