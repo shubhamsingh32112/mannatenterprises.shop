@@ -7,6 +7,9 @@ type CheckoutOrderResponse = {
     amount: number;
     currency: string;
     coins: number;
+    vipBonusCoins?: number;
+    totalCoinsReceived?: number;
+    vipBonusApplied?: boolean;
     keyId: string;
   };
   error?: string;
@@ -59,6 +62,8 @@ const WalletCheckout = () => {
   const [status, setStatus] = useState<"loading" | "ready" | "processing" | "success" | "failed">("loading");
   const [message, setMessage] = useState("Preparing checkout...");
   const [coins, setCoins] = useState<number | null>(null);
+  const [vipBonusCoins, setVipBonusCoins] = useState<number>(0);
+  const [totalCoinsReceived, setTotalCoinsReceived] = useState<number | null>(null);
   const [appOpenUrl, setAppOpenUrl] = useState<string | null>(null);
 
   const checkoutToken = useMemo(() => {
@@ -117,9 +122,17 @@ const WalletCheckout = () => {
         if (cancelled) return;
 
         const data = orderData.data;
+        const bonus = data.vipBonusCoins ?? 0;
+        const total = data.totalCoinsReceived ?? data.coins + bonus;
         setCoins(data.coins);
+        setVipBonusCoins(bonus);
+        setTotalCoinsReceived(total);
         setStatus("ready");
-        setMessage(`Pay INR ${data.amount / 100} for ${data.coins} coins`);
+        setMessage(
+          bonus > 0
+            ? `Pay INR ${data.amount / 100} for ${total} coins (${data.coins} + ${bonus} VIP bonus)`
+            : `Pay INR ${data.amount / 100} for ${data.coins} coins`,
+        );
 
         /** Razorpay Standard Checkout default instruments only (no custom display.blocks).
          *  Custom UPI-first blocks split UI across users and triggered "no appropriate
@@ -129,7 +142,10 @@ const WalletCheckout = () => {
           amount: data.amount,
           currency: data.currency,
           name: "Match Vibe",
-          description: `${data.coins} Coins`,
+          description:
+            bonus > 0
+              ? `${total} Coins (${data.coins} + ${bonus} VIP bonus)`
+              : `${data.coins} Coins`,
           order_id: data.orderId,
           handler: async (response: RazorpaySuccessResponse) => {
             try {
@@ -214,7 +230,10 @@ const WalletCheckout = () => {
           </p>
           {coins !== null ? (
             <p>
-              <span className="font-medium">Coins:</span> {coins}
+              <span className="font-medium">Coins:</span>{" "}
+              {totalCoinsReceived !== null && vipBonusCoins > 0
+                ? `${totalCoinsReceived} (${coins} base + ${vipBonusCoins} VIP bonus)`
+                : coins}
             </p>
           ) : null}
         </div>
